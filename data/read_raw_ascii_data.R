@@ -24,7 +24,7 @@ assets  = c('EURUSD','EURCHF','EURGBP','EURJPY','EURAUD',
 # EURCHF is strange, but the problem is not in the data
 # something happened on the 2014; use it anyways
 
-i=2
+i=5
 
 # for(i in 1:length(assets)){
 
@@ -41,9 +41,22 @@ i=2
 
 
 hfrets   = makeReturns(all.dfs[[i]])
+dailyRV  = rRVar(hfrets, alignBy = "minutes",
+                 alignPeriod = 5,makeReturns = FALSE)
+
+RVts     = xts(coredata(dailyRV),order.by = date(dailyRV))
+
 dailyret = aggregateTS(hfrets,FUN = "sum",alignBy = "days")
 
 newts1 = xts(coredata(dailyret)*100,order.by = date(dailyret))
+
+stand = scale(dailyret/sqrt(RVts))
+
+hist(stand)
+mean(stand)
+sd(stand)
+
+plot(stand)
 
 # compare with data from YahooFinance
 data = getSymbols(paste(assets[i],'=X',sep=''), from = date(dailyret)[1],
