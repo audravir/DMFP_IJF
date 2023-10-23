@@ -13,7 +13,7 @@ sumst = function(x){
 
 min.seq = seq.POSIXt(as.POSIXct("2007-01-01 00:00:00",tz="EST"), 
                      as.POSIXct("2023-12-31 23:59:59",tz="EST"), 
-                     by = "5 min")
+                     by = "30 min")
 all.dfs = list()
 
 assets  = c('EURUSD','EURCHF','EURGBP','EURJPY','EURAUD',
@@ -31,7 +31,7 @@ assets  = c('EURUSD','EURCHF','EURGBP','EURJPY','EURAUD',
 
 # select any asset
 
-i=2
+i=10
 
 # for(i in 1:length(assets)){
 
@@ -67,10 +67,8 @@ lines(newts2,col=2,lwd=2)
 cbind(sumst((dailyret)*100),sumst(yf))
 
 # check more closely some small subsample: 
-plot(newts1[100:150])
-lines(newts2[100:150],col=2,lwd=2)
+plot(newts1[1:150])
+lines(newts2[1:150],col=2,lwd=2)
 
 # very similar.
 
-
-newts1[which.min(newts1)]

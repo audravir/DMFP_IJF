@@ -13,7 +13,7 @@ sumst = function(x){
 
 min.seq = seq.POSIXt(as.POSIXct("2007-01-01 00:00:00",tz="EST"), 
                      as.POSIXct("2023-12-31 23:59:59",tz="EST"), 
-                     by = "5 min")
+                     by = "30 min")
 all.dfs = list()
 
 assets  = c('EURUSD','EURCHF','EURGBP','EURJPY','EURAUD',
@@ -21,42 +21,63 @@ assets  = c('EURUSD','EURCHF','EURGBP','EURJPY','EURAUD',
             'GBPUSD','AUDJPY','AUDUSD','CHFJPY','NZDJPY',
             'NZDUSD','EURCAD','AUDCAD','CADJPY','GBPAUD',
             'AUDNZD','GBPCAD')
-# EURCHF is strange, but the problem is not in the data
-# something happened on the 2014; use it anyways
 
-i=5
-
-# for(i in 1:length(assets)){
-
+for(i in 1:length(assets)){
   x       = read.table(paste('C:/Users/USER/Desktop/raw_histdata_data/',assets[i],
                              ".csv",sep=''),header = FALSE, sep = ";",dec=".")
   colnames(x) <- c("DateTime Stamp", "OPEN", "HIGH", "LOW", "CLOSE", "Volume")
   # format the first column as a date.time
   temp    <- as.POSIXct(strptime(x[,1], "%Y%m%d %H%M%S"),tz = 'EST')
   x$temp  <- temp+60*60*7 #change to GMT+2; now data is weekdays only
+  # does not affect the co-dependence. Also, in line with the data
+  # from Yahoo fiance
   index   = match(min.seq,temp)
   index   = na.omit(index)
   all.dfs[[i]] = xts(x[index,5], order.by=x[index,7])
-# }
+}
+
+names(all.dfs) = assets
+
+save(all.dfs,file='data/all_dfs.Rdata')
+
+dim(all.dfs)
+class(all.dfs)
+
 
 
 hfrets   = makeReturns(all.dfs[[i]])
 dailyRV  = rRVar(hfrets, alignBy = "minutes",
-                 alignPeriod = 5,makeReturns = FALSE)
-
-RVts     = xts(coredata(dailyRV),order.by = date(dailyRV))
-
+                 alignPeriod = 30,makeReturns = FALSE)
 dailyret = aggregateTS(hfrets,FUN = "sum",alignBy = "days")
+
+lret = coredata(dailyret)
+RVs  = coredata(dailyRV)
+
+
+length(lret)
+length(RVs)
+
+stand = scale(lret/sqrt(RVs))
+
+hist(stand)
+exc = which(RVs==0)
+if(length(exc)>0){
+  stand = stand[-exc]
+}
+
+
+plot(stand,type='l')
+
+jarque.test(stand[,1])
+hist(pnorm(stand[,1]))
+shapiro.test(stand[,1])
+ks.test(stand[,1],pnorm)
+
+library(ddst)
+ddst.uniform.test(pnorm(stand[,1]), compute.p=TRUE)
 
 newts1 = xts(coredata(dailyret)*100,order.by = date(dailyret))
 
-stand = scale(dailyret/sqrt(RVts))
-
-hist(stand)
-mean(stand)
-sd(stand)
-
-plot(stand)
 
 # compare with data from YahooFinance
 data = getSymbols(paste(assets[i],'=X',sep=''), from = date(dailyret)[1],
